@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo/brand-logo.component';
+import type { UserRole } from '../../../core/models/user.model';
 
 interface NavItem {
   label: string;
   icon: string;
   route: string;
+  roles?: UserRole[];
 }
 
 @Component({
@@ -26,7 +28,7 @@ interface NavItem {
         </div>
         <div class="my-1  h-px bg-surface-200 dark:bg-surface-800"></div>
         <nav class="flex-1 mt-2 space-y-1 px-3 pb-4">
-          @for (navItem of navItems; track navItem.route) {
+          @for (navItem of visibleNavItems(); track navItem.route) {
             <a
               [routerLink]="navItem.route"
               routerLinkActive="bg-brand-500 text-white shadow"
@@ -61,7 +63,7 @@ interface NavItem {
             </button>
           </div>
           <nav class="flex-1 space-y-1 px-3 pb-4">
-            @for (navItem of navItems; track navItem.route) {
+            @for (navItem of visibleNavItems(); track navItem.route) {
               <a
                 [routerLink]="navItem.route"
                 routerLinkActive="bg-brand-500 text-white"
@@ -178,12 +180,25 @@ export class DashboardLayoutComponent {
   readonly userMenuOpen = signal(false);
 
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/dashboard/overview' },
-    { label: 'Projects', icon: 'inventory_2', route: '/dashboard/projects' },
-    { label: 'Tickets', icon: 'confirmation_number', route: '/dashboard/tickets' },
-    { label: 'Users', icon: 'group', route: '/dashboard/users' },
-    { label: 'Settings', icon: 'settings', route: '/dashboard/settings' },
+    {
+      label: 'Dashboard',
+      icon: 'dashboard',
+      route: '/dashboard/overview',
+      roles: ['admin', 'support', 'end_user'],
+    },
+    {
+      label: 'Tickets',
+      icon: 'confirmation_number',
+      route: '/dashboard/tickets',
+      roles: ['admin', 'support', 'end_user'],
+    },
+    { label: 'Users', icon: 'group', route: '/dashboard/users', roles: ['admin'] },
+    { label: 'Settings', icon: 'settings', route: '/dashboard/settings', roles: ['admin'] },
   ];
+
+  readonly visibleNavItems = computed(() =>
+    this.navItems.filter((item) => !item.roles || this.auth.hasRole(...item.roles)),
+  );
 
   initials(): string {
     const displayName = this.auth.user()?.name ?? this.auth.user()?.email ?? 'U';

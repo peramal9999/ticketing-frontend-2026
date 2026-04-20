@@ -107,7 +107,7 @@ import { BrandLogoComponent } from '../../../shared/components/brand-logo/brand-
           >
             @if (loading()) {
               <span class="material-icons animate-spin text-[18px]">progress_activity</span>
-              <span>Signing in...</span>
+              <span>Sign In</span>
             } @else {
               <span class="material-icons text-[18px]">login</span>
               <span>Sign In</span>
@@ -143,13 +143,16 @@ export class LoginComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: (session) => {
-        this.auth.setSession(session);
+      next: () => {
         const redirect = this.route.snapshot.queryParamMap.get('redirect') ?? '/dashboard';
         this.router.navigateByUrl(redirect);
       },
-      error: (err: Error) => {
-        this.errorMessage.set(err.message ?? 'Unable to sign in.');
+      error: (err: { status?: number; message?: string }) => {
+        const msg =
+          err?.status === 401
+            ? 'Invalid email or password.'
+            : err?.message ?? 'Unable to sign in.';
+        this.errorMessage.set(msg);
         this.loading.set(false);
       },
     });
